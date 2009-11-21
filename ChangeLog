@@ -1,5 +1,10 @@
 2008-02-10  chl  <chl@tuxfamily.org>
 
+	- allow overwrite an existing installation. Thank to Ed Avis for the
+	bug report.
+
+2008-02-10  chl  <chl@tuxfamily.org>
+
 	- add LICENCE and README files
 	- make it build on MacOS X (thanks to Elias Pipping for the report and
 	patch).
