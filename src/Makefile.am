@@ -12,6 +12,15 @@ LDADD = $(LIBCOMPAT)
 
 #ci co ident merge rcsclean rcsdiff rcsmerge rlog
 install-exec-hook:
+	rm -rf	$(DESTDIR)$(bindir)/ci$(EXEEXT) \
+		$(DESTDIR)$(bindir)/co$(EXEEXT) \
+		$(DESTDIR)$(bindir)/ident$(EXEEXT) \
+		$(DESTDIR)$(bindir)/merge$(EXEEXT) \
+		$(DESTDIR)$(bindir)/rcsclean$(EXEEXT) \
+		$(DESTDIR)$(bindir)/rcsdiff$(EXEEXT) \
+		$(DESTDIR)$(bindir)/rcsmerge$(EXEEXT) \
+		$(DESTDIR)$(bindir)/rlog$(EXEEXT)
+
 	ln $(DESTDIR)$(bindir)/rcs$(EXEEXT) \
 		$(DESTDIR)$(bindir)/ci$(EXEEXT)
 	ln $(DESTDIR)$(bindir)/rcs$(EXEEXT) \
