@@ -6,7 +6,7 @@ rcs_SOURCES = ci.c co.c ident.c merge.c rcsclean.c rcsdiff.c rcsmerge.c \
 
 INCLUDES = -I$(top_srcdir)/openbsd-compat/
 
-LIBCOMPAT=$(top_srcdir)/openbsd-compat/.libs/libopenbsd-compat.a
+LIBCOMPAT=$(top_srcdir)/openbsd-compat/libopenbsd-compat.a
 
 LDADD = $(LIBCOMPAT)
 

@@ -4,7 +4,8 @@
 	- make it build on MacOS X (thanks to Elias Pipping for the report and
 	patch).
 	- make it build on Alpine Linux, which is a Gentoo uclibc distro
-	(thanks to Natanael Copa for the report and patches)
+	(thanks to Natanael Copa for the report and patches).
+	- use static library for openbsd-compat, instead of dynamic one.
 
 2008-02-08  chl  <chl@tuxfamily.org>
 
