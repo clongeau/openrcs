@@ -1,0 +1,20 @@
+This is the port of OpenBSD's excellent OpenRCS[0] to Linux and other
+Unices.
+
+This port consists of the re-introduction of autoconf support, and
+replacements for OpenBSD library functions that are (regrettably)
+absent from other unices.
+
+This version actively tracks changes in the OpenBSD CVS repository.
+
+Please send bug reports and patches to chl@tuxfamily.org, so I could
+check if it comes from the port or from the original OpenRCS. Code
+contribution are welcomed, but please follow the OpenBSD style
+guidelines[1].
+
+Charles Longeau <chl@tuxfamily.org>
+
+References -
+
+[0] http://opencvs.org
+[1] http://www.openbsd.org/cgi-bin/man.cgi?query=style&sektion=9
