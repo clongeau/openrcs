@@ -1,4 +1,4 @@
-/*	$OpenBSD: rcsprog.h,v 1.60 2007/06/30 08:23:49 xsa Exp $	*/
+/*	$OpenBSD: rcsprog.h,v 1.63 2010/07/23 21:46:05 ray Exp $	*/
 /*
  * Copyright (c) 2005 Joris Vink <joris@openbsd.org>
  * All rights reserved.
@@ -80,10 +80,10 @@ extern int	 rcs_optind;
 extern char	*rcs_optarg;
 extern char	*rcs_suffixes;
 extern char	*rcs_tmpdir;
-extern struct rcs_wklhead rcs_temp_files;
+extern struct wklhead temp_files;
 
 /* date.y */
-time_t  rcs_date_parse(const char *);
+time_t  date_parse(const char *);
 
 /* ci.c */
 int	checkin_main(int, char **);
@@ -116,7 +116,7 @@ int	rcsmerge_main(int, char **);
 void	rcsmerge_usage(void);
 
 /* rcsprog.c */
-int	rcs_init(char *, char **, int);
+int	build_cmd(char ***, char **, int);
 int	rcs_getopt(int, char **, const char *);
 int	rcs_main(int, char **);
 void	rcs_usage(void);

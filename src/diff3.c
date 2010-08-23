@@ -1,4 +1,4 @@
-/*	$OpenBSD: diff3.c,v 1.25 2007/12/23 01:15:12 tedu Exp $	*/
+/*	$OpenBSD: diff3.c,v 1.31 2010/07/28 09:07:11 ray Exp $	*/
 
 /*
  * Copyright (C) Caldera International Inc.  2001-2002.
@@ -64,17 +64,6 @@
  *	@(#)diff3.c	8.1 (Berkeley) 6/6/93
  */
 
-#ifndef lint
-static const char copyright[] =
-"@(#) Copyright (c) 1991, 1993\n\
-	The Regents of the University of California.  All rights reserved.\n";
-#endif /* not lint */
-
-#ifndef lint
-static const char rcsid[] =
-    "$OpenBSD: diff3.c,v 1.25 2007/12/23 01:15:12 tedu Exp $";
-#endif /* not lint */
-
 #include <ctype.h>
 #include <err.h>
 #include <stdio.h>
@@ -137,14 +126,14 @@ static int last[4];
 static int eflag = 3;	/* default -E for compatibility with former RCS */
 static int oflag = 1;	/* default -E for compatibility with former RCS */
 static int debug  = 0;
-static char f1mark[256], f3mark[256];	/* markers for -E and -X */
+static char f1mark[MAXPATHLEN], f3mark[MAXPATHLEN];	/* markers for -E and -X */
 
 static int duplicate(struct range *, struct range *);
 static int edit(struct diff *, int, int);
 static char *getchange(FILE *);
 static char *getline(FILE *, size_t *);
 static int number(char **);
-static size_t readin(char *, struct diff **);
+static ssize_t readin(char *, struct diff **);
 static int skip(int, int, char *);
 static int edscript(int);
 static int merge(size_t, size_t);
@@ -177,45 +166,45 @@ merge_diff3(char **av, int flags)
 	if ((flags & MERGE_EFLAG) && !(flags & MERGE_OFLAG))
 		oflag = 0;
 
-	if ((b1 = rcs_buf_load(av[0], BUF_AUTOEXT)) == NULL)
+	if ((b1 = buf_load(av[0])) == NULL)
 		goto out;
-	if ((b2 = rcs_buf_load(av[1], BUF_AUTOEXT)) == NULL)
+	if ((b2 = buf_load(av[1])) == NULL)
 		goto out;
-	if ((b3 = rcs_buf_load(av[2], BUF_AUTOEXT)) == NULL)
+	if ((b3 = buf_load(av[2])) == NULL)
 		goto out;
 
-	d1 = rcs_buf_alloc(128, BUF_AUTOEXT);
-	d2 = rcs_buf_alloc(128, BUF_AUTOEXT);
-	diffb = rcs_buf_alloc(128, BUF_AUTOEXT);
+	d1 = buf_alloc(128);
+	d2 = buf_alloc(128);
+	diffb = buf_alloc(128);
 
 	(void)xasprintf(&path1, "%s/diff1.XXXXXXXXXX", rcs_tmpdir);
 	(void)xasprintf(&path2, "%s/diff2.XXXXXXXXXX", rcs_tmpdir);
 	(void)xasprintf(&path3, "%s/diff3.XXXXXXXXXX", rcs_tmpdir);
 
-	rcs_buf_write_stmp(b1, path1);
-	rcs_buf_write_stmp(b2, path2);
-	rcs_buf_write_stmp(b3, path3);
+	buf_write_stmp(b1, path1);
+	buf_write_stmp(b2, path2);
+	buf_write_stmp(b3, path3);
 
-	rcs_buf_free(b2);
+	buf_free(b2);
 	b2 = NULL;
 
-	if ((diffreg(path1, path3, d1, 0) == D_ERROR) ||
-	    (diffreg(path2, path3, d2, 0) == D_ERROR)) {
-		rcs_buf_free(diffb);
+	if ((diffreg(path1, path3, d1, D_FORCEASCII) == D_ERROR) ||
+	    (diffreg(path2, path3, d2, D_FORCEASCII) == D_ERROR)) {
+		buf_free(diffb);
 		diffb = NULL;
 		goto out;
 	}
 
 	(void)xasprintf(&dp13, "%s/d13.XXXXXXXXXX", rcs_tmpdir);
-	rcs_buf_write_stmp(d1, dp13);
+	buf_write_stmp(d1, dp13);
 
-	rcs_buf_free(d1);
+	buf_free(d1);
 	d1 = NULL;
 
 	(void)xasprintf(&dp23, "%s/d23.XXXXXXXXXX", rcs_tmpdir);
-	rcs_buf_write_stmp(d2, dp23);
+	buf_write_stmp(d2, dp23);
 
-	rcs_buf_free(d2);
+	buf_free(d2);
 	d2 = NULL;
 
 	argc = 0;
@@ -228,15 +217,15 @@ merge_diff3(char **av, int flags)
 
 	diff3_conflicts = diff3_internal(argc, argv, av[0], av[2]);
 	if (diff3_conflicts < 0) {
-		rcs_buf_free(diffb);
+		buf_free(diffb);
 		diffb = NULL;
 		goto out;
 	}
 
-	plen = rcs_buf_len(diffb);
-	patch = rcs_buf_release(diffb);
-	dlen = rcs_buf_len(b1);
-	data = rcs_buf_release(b1);
+	plen = buf_len(diffb);
+	patch = buf_release(diffb);
+	dlen = buf_len(b1);
+	data = buf_release(b1);
 
 	if ((diffb = rcs_patchfile(data, dlen, patch, plen, ed_patch_lines)) == NULL)
 		goto out;
@@ -246,13 +235,13 @@ merge_diff3(char **av, int flags)
 
 out:
 	if (b2 != NULL)
-		rcs_buf_free(b2);
+		buf_free(b2);
 	if (b3 != NULL)
-		rcs_buf_free(b3);
+		buf_free(b3);
 	if (d1 != NULL)
-		rcs_buf_free(d1);
+		buf_free(d1);
 	if (d2 != NULL)
-		rcs_buf_free(d2);
+		buf_free(d2);
 
 	(void)unlink(path1);
 	(void)unlink(path2);
@@ -298,7 +287,7 @@ rcs_diff3(RCSFILE *rf, char *workfile, RCSNUM *rev1, RCSNUM *rev2, int flags)
 	rcsnum_tostr(rev1, r1, sizeof(r1));
 	rcsnum_tostr(rev2, r2, sizeof(r2));
 
-	if ((b1 = rcs_buf_load(workfile, BUF_AUTOEXT)) == NULL)
+	if ((b1 = buf_load(workfile)) == NULL)
 		goto out;
 
 	if (!(flags & QUIET))
@@ -311,38 +300,38 @@ rcs_diff3(RCSFILE *rf, char *workfile, RCSNUM *rev1, RCSNUM *rev2, int flags)
 	if ((b3 = rcs_getrev(rf, rev2)) == NULL)
 		goto out;
 
-	d1 = rcs_buf_alloc(128, BUF_AUTOEXT);
-	d2 = rcs_buf_alloc(128, BUF_AUTOEXT);
-	diffb = rcs_buf_alloc(128, BUF_AUTOEXT);
+	d1 = buf_alloc(128);
+	d2 = buf_alloc(128);
+	diffb = buf_alloc(128);
 
 	(void)xasprintf(&path1, "%s/diff1.XXXXXXXXXX", rcs_tmpdir);
 	(void)xasprintf(&path2, "%s/diff2.XXXXXXXXXX", rcs_tmpdir);
 	(void)xasprintf(&path3, "%s/diff3.XXXXXXXXXX", rcs_tmpdir);
 
-	rcs_buf_write_stmp(b1, path1);
-	rcs_buf_write_stmp(b2, path2);
-	rcs_buf_write_stmp(b3, path3);
+	buf_write_stmp(b1, path1);
+	buf_write_stmp(b2, path2);
+	buf_write_stmp(b3, path3);
 
-	rcs_buf_free(b2);
+	buf_free(b2);
 	b2 = NULL;
 
-	if ((diffreg(path1, path3, d1, 0) == D_ERROR) ||
-	    (diffreg(path2, path3, d2, 0) == D_ERROR)) {
-		rcs_buf_free(diffb);
+	if ((diffreg(path1, path3, d1, D_FORCEASCII) == D_ERROR) ||
+	    (diffreg(path2, path3, d2, D_FORCEASCII) == D_ERROR)) {
+		buf_free(diffb);
 		diffb = NULL;
 		goto out;
 	}
 
 	(void)xasprintf(&dp13, "%s/d13.XXXXXXXXXX", rcs_tmpdir);
-	rcs_buf_write_stmp(d1, dp13);
+	buf_write_stmp(d1, dp13);
 
-	rcs_buf_free(d1);
+	buf_free(d1);
 	d1 = NULL;
 
 	(void)xasprintf(&dp23, "%s/d23.XXXXXXXXXX", rcs_tmpdir);
-	rcs_buf_write_stmp(d2, dp23);
+	buf_write_stmp(d2, dp23);
 
-	rcs_buf_free(d2);
+	buf_free(d2);
 	d2 = NULL;
 
 	argc = 0;
@@ -355,15 +344,15 @@ rcs_diff3(RCSFILE *rf, char *workfile, RCSNUM *rev1, RCSNUM *rev2, int flags)
 
 	diff3_conflicts = diff3_internal(argc, argv, workfile, r2);
 	if (diff3_conflicts < 0) {
-		rcs_buf_free(diffb);
+		buf_free(diffb);
 		diffb = NULL;
 		goto out;
 	}
 
-	plen = rcs_buf_len(diffb);
-	patch = rcs_buf_release(diffb);
-	dlen = rcs_buf_len(b1);
-	data = rcs_buf_release(b1);
+	plen = buf_len(diffb);
+	patch = buf_release(diffb);
+	dlen = buf_len(b1);
+	data = buf_release(b1);
 
 	if ((diffb = rcs_patchfile(data, dlen, patch, plen, ed_patch_lines)) == NULL)
 		goto out;
@@ -373,13 +362,13 @@ rcs_diff3(RCSFILE *rf, char *workfile, RCSNUM *rev1, RCSNUM *rev2, int flags)
 
 out:
 	if (b2 != NULL)
-		rcs_buf_free(b2);
+		buf_free(b2);
 	if (b3 != NULL)
-		rcs_buf_free(b3);
+		buf_free(b3);
 	if (d1 != NULL)
-		rcs_buf_free(d1);
+		buf_free(d1);
 	if (d2 != NULL)
-		rcs_buf_free(d2);
+		buf_free(d2);
 
 	(void)unlink(path1);
 	(void)unlink(path2);
@@ -408,7 +397,7 @@ out:
 static int
 diff3_internal(int argc, char **argv, const char *fmark, const char *rmark)
 {
-	size_t m, n;
+	ssize_t m, n;
 	int i;
 
 	if (argc < 5)
@@ -425,8 +414,14 @@ diff3_internal(int argc, char **argv, const char *fmark, const char *rmark)
 	}
 
 	increase();
-	m = readin(argv[0], &d13);
-	n = readin(argv[1], &d23);
+	if ((m = readin(argv[0], &d13)) < 0) {
+		warn("%s", argv[0]);
+		return (-1);
+	}
+	if ((n = readin(argv[1], &d23)) < 0) {
+		warn("%s", argv[1]);
+		return (-1);
+	}
 
 	for (i = 0; i <= 2; i++)
 		if ((fp[i] = fopen(argv[i + 2], "r")) == NULL) {
@@ -454,14 +449,18 @@ ed_patch_lines(struct rcs_lines *dlines, struct rcs_lines *plines)
 		/* Skip blank lines */
 		if (lp->l_len < 2)
 			continue;
+
 		/* NUL-terminate line buffer for strtol() safety. */
 		tmp = lp->l_line[lp->l_len - 1];
 		lp->l_line[lp->l_len - 1] = '\0';
+
 		/* len - 1 is NUL terminator so we use len - 2 for 'op' */
 		op = lp->l_line[lp->l_len - 2];
 		start = (int)strtol(lp->l_line, &ep, 10);
+
 		/* Restore the last byte of the buffer */
 		lp->l_line[lp->l_len - 1] = tmp;
+
 		if (op == 'a') {
 			if (start > dlines->l_nblines ||
 			    start < 0 || *ep != 'a')
@@ -488,7 +487,7 @@ ed_patch_lines(struct rcs_lines *dlines, struct rcs_lines *plines)
 			if (dlp->l_lineno == start)
 				break;
 			if (dlp->l_lineno > start) {
-				dlp = TAILQ_PREV(dlp, rcs_tqh, l_list);
+				dlp = TAILQ_PREV(dlp, tqh, l_list);
 			} else if (dlp->l_lineno < start) {
 				ndlp = TAILQ_NEXT(dlp, l_list);
 				if (ndlp->l_lineno > start)
@@ -502,7 +501,7 @@ ed_patch_lines(struct rcs_lines *dlines, struct rcs_lines *plines)
 
 
 		if (op == 'c') {
-			insert_after = TAILQ_PREV(dlp, rcs_tqh, l_list);
+			insert_after = TAILQ_PREV(dlp, tqh, l_list);
 			for (i = 0; i <= (end - start); i++) {
 				ndlp = TAILQ_NEXT(dlp, l_list);
 				TAILQ_REMOVE(&(dlines->l_lines), dlp, l_list);
@@ -550,7 +549,7 @@ ed_patch_lines(struct rcs_lines *dlines, struct rcs_lines *plines)
  * since the vector is processed in one sequential pass.
  * The vector could be optimized out of existence)
  */
-static size_t
+static ssize_t
 readin(char *name, struct diff **dd)
 {
 	int a, b, c, d;
@@ -558,6 +557,8 @@ readin(char *name, struct diff **dd)
 	size_t i;
 
 	fp[0] = fopen(name, "r");
+	if (fp[0] == NULL)
+		return (-1);
 	for (i = 0; (p = getchange(fp[0])); i++) {
 		if (i >= szchanges - 1)
 			increase();
@@ -588,6 +589,7 @@ readin(char *name, struct diff **dd)
 		(*dd)[i].old.from = (*dd)[i-1].old.to;
 		(*dd)[i].new.from = (*dd)[i-1].new.to;
 	}
+
 	(void)fclose(fp[0]);
 
 	return (i);
@@ -906,8 +908,7 @@ edscript(int n)
 		(void)fseek(fp[2], (long)de[n].new.from, SEEK_SET);
 		for (k = de[n].new.to-de[n].new.from; k > 0; k-= j) {
 			j = k > BUFSIZ ? BUFSIZ : k;
-			if (fread(block, 1, (size_t)j,
-			    fp[2]) != (size_t)j)
+			if (fread(block, 1, j, fp[2]) != j)
 				return (-1);
 			block[j] = '\0';
 			diff_output("%s", block);

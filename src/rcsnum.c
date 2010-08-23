@@ -1,4 +1,4 @@
-/*	$OpenBSD: rcsnum.c,v 1.10 2008/01/31 16:36:11 tobias Exp $	*/
+/*	$OpenBSD: rcsnum.c,v 1.12 2010/07/23 21:46:05 ray Exp $	*/
 /*
  * Copyright (c) 2004 Jean-Francois Brousseau <jfb@openbsd.org>
  * All rights reserved.
@@ -188,8 +188,9 @@ rcsnum_cpy(const RCSNUM *nsrc, RCSNUM *ndst, u_int depth)
  * Compare the two numbers <n1> and <n2>. Returns -1 if <n1> is larger than
  * <n2>, 0 if they are both the same, and 1 if <n2> is larger than <n1>.
  * The <depth> argument specifies how many numbers deep should be checked for
- * the result.  A value of 0 means that the depth will be the minimum of the
- * two numbers.
+ * the result.  A value of 0 means that the depth will be the maximum of the
+ * two numbers, so that a longer number is considered greater than a shorter
+ * number if they are equal up to the minimum length.
  */
 int
 rcsnum_cmp(const RCSNUM *n1, const RCSNUM *n2, u_int depth)
@@ -210,7 +211,12 @@ rcsnum_cmp(const RCSNUM *n1, const RCSNUM *n2, u_int depth)
 			return (-1);
 	}
 
-	if (n1->rn_len > n2->rn_len)
+	/* If an explicit depth was specified, and we've
+	 * already checked up to depth, consider the
+	 * revision numbers equal. */
+	if (depth != 0 && slen == depth)
+		return (0);
+	else if (n1->rn_len > n2->rn_len)
 		return (-1);
 	else if (n2->rn_len > n1->rn_len)
 		return (1);
@@ -276,8 +282,8 @@ rcsnum_aton(const char *str, char **ep, RCSNUM *nump)
 	 * rightside of the branch number, so instead of having an odd
 	 * number of dot-separated decimals, it will have an even number.
 	 *
-	 * Now, according to all the documentation i've found on the net
-	 * about this, cvs does this for "efficiency reasons", i'd like
+	 * Now, according to all the documentation I've found on the net
+	 * about this, cvs does this for "efficiency reasons", I'd like
 	 * to hear one.
 	 *
 	 * We just make sure we remove the .0. from in the branch number.
@@ -299,9 +305,9 @@ rcsnum_aton(const char *str, char **ep, RCSNUM *nump)
 				s--;
 
 			/*
-	 		 * If we have a "magic" branch, adjust it
-	 		 * so the .0. is removed.
-	 		 */
+			 * If we have a "magic" branch, adjust it
+			 * so the .0. is removed.
+			 */
 			if (!strncmp(s, RCS_MAGIC_BRANCH,
 			    strlen(RCS_MAGIC_BRANCH))) {
 				nump->rn_id[nump->rn_len - 1] =
