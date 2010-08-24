@@ -2,7 +2,6 @@
 #include <string.h>
 
 #include "../config.h"
-#include "sys-queue.h"
 
 #ifdef HAVE_SYS_DIRENT_H
 #include <sys/dirent.h>

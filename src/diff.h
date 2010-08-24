@@ -66,7 +66,7 @@
 #ifndef DIFF_H
 #define DIFF_H
 
-#include <sys/queue.h>
+#include "sys-queue.h"
 
 #include <regex.h>
 

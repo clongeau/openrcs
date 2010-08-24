@@ -24,7 +24,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/queue.h>
+#include "sys-queue.h"
 
 #include <err.h>
 #include <signal.h>

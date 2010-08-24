@@ -131,7 +131,7 @@ static char f1mark[MAXPATHLEN], f3mark[MAXPATHLEN];	/* markers for -E and -X */
 static int duplicate(struct range *, struct range *);
 static int edit(struct diff *, int, int);
 static char *getchange(FILE *);
-static char *getline(FILE *, size_t *);
+static char *diff3_getline(FILE *, size_t *);
 static int number(char **);
 static ssize_t readin(char *, struct diff **);
 static int skip(int, int, char *);
@@ -612,7 +612,7 @@ getchange(FILE *b)
 {
 	char *line;
 
-	while ((line = getline(b, NULL))) {
+	while ((line = diff3_getline(b, NULL))) {
 		if (isdigit((unsigned char)line[0]))
 			return (line);
 	}
@@ -621,7 +621,7 @@ getchange(FILE *b)
 }
 
 static char *
-getline(FILE *b, size_t *n)
+diff3_getline(FILE *b, size_t *n)
 {
 	char *cp;
 	size_t len;
@@ -823,7 +823,7 @@ skip(int i, int from, char *pr)
 	char *line;
 
 	for (n = 0; cline[i] < from - 1; n += j) {
-		if ((line = getline(fp[i], &j)) == NULL)
+		if ((line = diff3_getline(fp[i], &j)) == NULL)
 			return (-1);
 		if (pr != NULL)
 			diff_output("%s%s", pr, line);

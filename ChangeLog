@@ -1,3 +1,27 @@
+2010-08-25  chl  <chl@tuxfamily.org>
+
+	- update from the latest OpenRCS cvs repository.
+
+	* src/CVS/Root:
+	* regress/CVS/Root:
+	- update
+
+	* src/diff3.c (diff3_getline):
+	- rename getline() to diff3_getline(), to avoid colision with
+	POSIX getline().
+
+	* src/buf.c:
+	* src/diff.c:
+	* src/xmalloc.c:
+	- add #define _GNU_SOURCE to properly define vasprintf() prototype
+
+	* openbsd-compat/compat.h:
+	* src/buf.c:
+	* src/diff.h:
+	* src/rcs.h:
+	* src/worklist.c:
+	- change #include <sys/queue.h> to #include "sys-queue.h"
+
 2008-02-10  chl  <chl@tuxfamily.org>
 
 	- allow overwrite an existing installation. Thank to Ed Avis for the
