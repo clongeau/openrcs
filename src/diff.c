@@ -64,6 +64,9 @@
  *	@(#)diffreg.c   8.1 (Berkeley) 6/6/93
  */
 
+/* needed for vasprintf */
+#define _GNU_SOURCE
+
 #include <sys/param.h>
 #include <sys/stat.h>
 

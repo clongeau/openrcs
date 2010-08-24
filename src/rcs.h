@@ -27,6 +27,7 @@
 #ifndef RCS_H
 #define RCS_H
 
+#include "sys/queue.h"
 #include <time.h>
 
 #include "compat.h"

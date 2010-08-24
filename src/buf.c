@@ -24,7 +24,10 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/queue.h>
+/* needed for vasprintf */
+#define _GNU_SOURCE
+
+#include "sys/queue.h"
 #include <sys/stat.h>
 
 #include <err.h>
