@@ -1,4 +1,4 @@
-/*	$OpenBSD: rcsprog.c,v 1.148 2010/07/23 08:31:19 ray Exp $	*/
+/*	$OpenBSD: rcsprog.c,v 1.150 2010/12/06 22:47:56 chl Exp $	*/
 /*
  * Copyright (c) 2005 Jean-Francois Brousseau <jfb@openbsd.org>
  * All rights reserved.
@@ -42,7 +42,7 @@ const char rcs_version[] = "OpenRCS 4.5";
 int	 rcsflags;
 int	 rcs_optind;
 char	*rcs_optarg;
-char	*rcs_suffixes;
+char	*rcs_suffixes = RCS_DEFAULT_SUFFIX;
 char	*rcs_tmpdir = RCS_TMPDIR_DEFAULT;
 
 struct rcs_prog {

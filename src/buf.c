@@ -1,4 +1,4 @@
-/*	$OpenBSD: buf.c,v 1.16 2010/07/28 09:07:11 ray Exp $	*/
+/*	$OpenBSD: buf.c,v 1.21 2011/04/20 19:34:16 nicm Exp $	*/
 /*
  * Copyright (c) 2003 Jean-Francois Brousseau <jfb@openbsd.org>
  * All rights reserved.
@@ -33,9 +33,7 @@
 #include <err.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -57,11 +55,9 @@ struct buf {
 static void	buf_grow(BUF *, size_t);
 
 /*
- * buf_alloc()
- *
  * Create a new buffer structure and return a pointer to it.  This structure
- * uses dynamically-allocated memory and must be freed with buf_free(),
- * once the buffer is no longer needed.
+ * uses dynamically-allocated memory and must be freed with buf_free(), once
+ * the buffer is no longer needed.
  */
 BUF *
 buf_alloc(size_t len)
@@ -82,8 +78,6 @@ buf_alloc(size_t len)
 }
 
 /*
- * buf_load()
- *
  * Open the file specified by <path> and load all of its contents into a
  * buffer.
  * Returns the loaded buffer on success or NULL on failure.
@@ -151,11 +145,9 @@ buf_free(BUF *b)
 }
 
 /*
- * buf_release()
- *
  * Free the buffer <b>'s structural information but do not free the contents
  * of the buffer.  Instead, they are returned and should be freed later using
- * free().
+ * xfree().
  */
 void *
 buf_release(BUF *b)
@@ -167,9 +159,6 @@ buf_release(BUF *b)
 	return (tmp);
 }
 
-/*
- * buf_get()
- */
 u_char *
 buf_get(BUF *b)
 {
@@ -177,8 +166,6 @@ buf_get(BUF *b)
 }
 
 /*
- * buf_empty()
- *
  * Empty the contents of the buffer <b> and reset pointers.
  */
 void
@@ -189,8 +176,6 @@ buf_empty(BUF *b)
 }
 
 /*
- * buf_putc()
- *
  * Append a single character <c> to the end of the buffer <b>.
  */
 void
@@ -198,23 +183,15 @@ buf_putc(BUF *b, int c)
 {
 	u_char *bp;
 
-	bp = b->cb_buf + b->cb_len;
-	if (bp == (b->cb_buf + b->cb_size)) {
-		/* extend */
+	if (SIZE_LEFT(b) == 0)
 		buf_grow(b, BUF_INCR);
-
-		/* the buffer might have been moved */
-		bp = b->cb_buf + b->cb_len;
-	}
+	bp = b->cb_buf + b->cb_len;
 	*bp = (u_char)c;
 	b->cb_len++;
 }
 
 /*
- * buf_getc()
- *
  * Return u_char at buffer position <pos>.
- *
  */
 u_char
 buf_getc(BUF *b, size_t pos)
@@ -223,29 +200,23 @@ buf_getc(BUF *b, size_t pos)
 }
 
 /*
- * buf_append()
- *
  * Append <len> bytes of data pointed to by <data> to the buffer <b>.  If the
- * buffer is too small to accept all data, it
- * will get resized to an appropriate size to accept all data.
+ * buffer is too small to accept all data, it will get resized to an
+ * appropriate size to accept all data.
  * Returns the number of bytes successfully appended to the buffer.
  */
 size_t
 buf_append(BUF *b, const void *data, size_t len)
 {
 	size_t left, rlen;
-	u_char *bp, *bep;
+	u_char *bp;
 
-	bp = b->cb_buf + b->cb_len;
-	bep = b->cb_buf + b->cb_size;
-	left = bep - bp;
+	left = SIZE_LEFT(b);
 	rlen = len;
 
-	if (left < len) {
+	if (left < len)
 		buf_grow(b, len - left);
-		bp = b->cb_buf + b->cb_len;
-	}
-
+	bp = b->cb_buf + b->cb_len;
 	memcpy(bp, data, rlen);
 	b->cb_len += rlen;
 
@@ -253,32 +224,6 @@ buf_append(BUF *b, const void *data, size_t len)
 }
 
 /*
- * buf_fappend()
- *
- */
-size_t
-buf_fappend(BUF *b, const char *fmt, ...)
-{
-	size_t ret;
-	int n;
-	char *str;
-	va_list vap;
-
-	va_start(vap, fmt);
-	n = vasprintf(&str, fmt, vap);
-	va_end(vap);
-
-	if (n == -1)
-		errx(1, "buf_fappend: failed to format data");
-
-	ret = buf_append(b, str, n);
-	xfree(str);
-	return (ret);
-}
-
-/*
- * buf_len()
- *
  * Returns the size of the buffer that is being used.
  */
 size_t
@@ -288,8 +233,6 @@ buf_len(BUF *b)
 }
 
 /*
- * buf_write_fd()
- *
  * Write the contents of the buffer <b> to the specified <fd>
  */
 int
@@ -318,8 +261,6 @@ buf_write_fd(BUF *b, int fd)
 }
 
 /*
- * buf_write()
- *
  * Write the contents of the buffer <b> to the file whose path is given in
  * <path>.  If the file does not exist, it is created with mode <mode>.
  */
@@ -349,11 +290,9 @@ buf_write(BUF *b, const char *path, mode_t mode)
 }
 
 /*
- * buf_write_stmp()
- *
  * Write the contents of the buffer <b> to a temporary file whose path is
- * specified using <template> (see mkstemp.3). NB. This function will modify
- * <template>, as per mkstemp
+ * specified using <template> (see mkstemp.3).
+ * NB. This function will modify <template>, as per mkstemp
  */
 void
 buf_write_stmp(BUF *b, char *template)
@@ -374,8 +313,6 @@ buf_write_stmp(BUF *b, char *template)
 }
 
 /*
- * buf_grow()
- *
  * Grow the buffer <b> by <len> bytes.  The contents are unchanged by this
  * operation regardless of the result.
  */

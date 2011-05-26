@@ -1,4 +1,4 @@
-/*	$OpenBSD: diff.c,v 1.31 2010/07/23 21:46:05 ray Exp $	*/
+/*	$OpenBSD: diff.c,v 1.33 2011/04/20 19:34:16 nicm Exp $	*/
 /*
  * Copyright (C) Caldera International Inc.  2001-2002.
  * All rights reserved.
@@ -72,7 +72,6 @@
 
 #include <ctype.h>
 #include <err.h>
-#include <limits.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -524,12 +523,15 @@ static int
 stone(int *a, int n, int *b, int *c, int flags)
 {
 	int i, k, y, j, l;
-	int oldc, tc, oldl;
-	u_int numtries;
+	int oldc, tc, oldl, sq;
+	u_int numtries, bound;
 
-	/* XXX move the isqrt() out of the macro to avoid multiple calls */
-	const u_int bound = (flags & D_MINIMAL) ? UINT_MAX :
-	    MAX(256, isqrt(n));
+	if (flags & D_MINIMAL)
+		bound = UINT_MAX;
+	else {
+		sq = isqrt(n);
+		bound = MAX(256, sq);
+	}
 
 	k = 0;
 	c[0] = newcand(0, 0, 0);
