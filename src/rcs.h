@@ -1,4 +1,4 @@
-/*	$OpenBSD: rcs.h,v 1.9 2010/07/23 21:46:05 ray Exp $	*/
+/*	$OpenBSD: rcs.h,v 1.14 2011/05/20 19:21:10 nicm Exp $	*/
 /*
  * Copyright (c) 2004 Jean-Francois Brousseau <jfb@openbsd.org>
  * All rights reserved.
@@ -32,6 +32,8 @@
 
 #include "compat.h"
 
+#include <stdio.h>
+
 #include "buf.h"
 
 #define RCS_DIFF_MAXARG		32
@@ -46,6 +48,7 @@
 #define RCS_HEAD_REV		((RCSNUM *)(-1))
 
 
+#define RCS_STATE_INVALCHAR	"$,:;@"
 #define RCS_SYM_INVALCHAR	"$,.:;@"
 
 #define RCS_MAGIC_BRANCH	".0."
@@ -148,7 +151,6 @@ typedef struct rcs_num {
 
 struct rcs_access {
 	char			*ra_name;
-	uid_t			 ra_uid;
 	TAILQ_ENTRY(rcs_access)	 ra_list;
 };
 
@@ -190,7 +192,7 @@ struct rcs_delta {
 
 
 typedef struct rcs_file {
-	int	 rf_fd;
+	FILE	*rf_file;
 	char	*rf_path;
 	mode_t	 rf_mode;
 	u_int	 rf_flags;
@@ -214,10 +216,8 @@ extern int rcs_errno;
 
 RCSFILE			*rcs_open(const char *, int, int, ...);
 void			 rcs_close(RCSFILE *);
-const RCSNUM		*rcs_head_get(RCSFILE *);
 int			 rcs_head_set(RCSFILE *, RCSNUM *);
 const RCSNUM		*rcs_branch_get(RCSFILE *);
-int			 rcs_branch_set(RCSFILE *, const RCSNUM *);
 int			 rcs_access_add(RCSFILE *, const char *);
 int			 rcs_access_remove(RCSFILE *, const char *);
 int			 rcs_access_check(RCSFILE *, const char *);
@@ -232,10 +232,7 @@ int			 rcs_lock_add(RCSFILE *, const char *, RCSNUM *);
 int			 rcs_lock_remove(RCSFILE *, const char *, RCSNUM *);
 BUF			*rcs_getrev(RCSFILE *, RCSNUM *);
 int			 rcs_deltatext_set(RCSFILE *, RCSNUM *, BUF *);
-const char		*rcs_desc_get(RCSFILE *);
 void			 rcs_desc_set(RCSFILE *, const char *);
-const char		*rcs_comment_lookup(const char *);
-const char		*rcs_comment_get(RCSFILE *);
 void			 rcs_comment_set(RCSFILE *, const char *);
 BUF			*rcs_kwexp_buf(BUF *, RCSFILE *, RCSNUM *);
 void			 rcs_kwexp_set(RCSFILE *, int);
@@ -246,10 +243,7 @@ time_t			 rcs_rev_getdate(RCSFILE *, RCSNUM *);
 int			 rcs_rev_setlog(RCSFILE *, RCSNUM *, const char *);
 int			 rcs_rev_remove(RCSFILE *, RCSNUM *);
 int			 rcs_state_set(RCSFILE *, RCSNUM *, const char *);
-const char		*rcs_state_get(RCSFILE *, RCSNUM *);
 int			 rcs_state_check(const char *);
-RCSNUM			*rcs_tag_resolve(RCSFILE *, const char *);
-const char		*rcs_errstr(int);
 void			 rcs_write(RCSFILE *);
 void			 rcs_delta_stats(struct rcs_delta *, int *, int *);
 
@@ -262,7 +256,6 @@ RCSNUM	*rcsnum_parse(const char *);
 RCSNUM	*rcsnum_brtorev(const RCSNUM *);
 RCSNUM	*rcsnum_revtobr(const RCSNUM *);
 RCSNUM	*rcsnum_inc(RCSNUM *);
-RCSNUM	*rcsnum_dec(RCSNUM *);
 void	 rcsnum_free(RCSNUM *);
 int	 rcsnum_addmagic(RCSNUM *);
 int	 rcsnum_aton(const char *, char **, RCSNUM *);

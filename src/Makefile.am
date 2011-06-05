@@ -1,8 +1,8 @@
 bin_PROGRAMS = rcs
 
-rcs_SOURCES = ci.c co.c ident.c merge.c rcsclean.c rcsdiff.c rcsmerge.c \
-		  rcsprog.c rlog.c rcsutil.c buf.c date.y diff.c diff3.c \
-		  rcs.c rcsnum.c rcstime.c worklist.c xmalloc.c
+rcs_SOURCES=	ci.c co.c ident.c merge.c rcsclean.c rcsdiff.c rcsmerge.c rcsparse.c \
+	rcsprog.c rlog.c rcsutil.c buf.c date.y diff.c diff3.c rcs.c rcsnum.c \
+	rcstime.c worklist.c xmalloc.c
 
 INCLUDES = -I$(top_srcdir)/openbsd-compat/
 

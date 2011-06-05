@@ -1,37 +1,39 @@
 /xmalloc.h/1.1/Wed Apr 26 02:55:13 2006//THEAD
-/Makefile/1.39/Mon Aug 23 09:10:58 2010//THEAD
-/buf.c/1.16/Result of merge//THEAD
-/buf.h/1.11/Result of merge+Mon Aug 23 09:10:59 2010//THEAD
-/ci.c/1.210/Result of merge//THEAD
-/co.c/1.113/Result of merge//THEAD
 /date.y/1.10/Result of merge//THEAD
-/diff.c/1.31/Mon Aug 23 09:10:59 2010//THEAD
-/diff3.c/1.31/Mon Aug 23 09:10:59 2010//THEAD
-/rcs.h/1.9/Result of merge//THEAD
-/rcsdiff.c/1.77/Result of merge//THEAD
-/rcsprog.c/1.148/Result of merge//THEAD
-/rcsutil.c/1.35/Result of merge//THEAD
 /worklist.c/1.3/Mon Aug 23 09:10:59 2010//THEAD
 /xmalloc.c/1.4/Result of merge//THEAD
 /diff.h/1.9/Mon Aug 23 09:10:59 2010//THEAD
 /worklist.h/1.3/Result of merge//THEAD
-/ci.1/1.35/Tue Aug 24 22:08:11 2010//THEAD
-/co.1/1.28/Tue Aug 24 22:08:11 2010//THEAD
-/ident.1/1.9/Tue Aug 24 22:08:11 2010//THEAD
-/ident.c/1.28/Tue Aug 24 22:08:11 2010//THEAD
-/merge.1/1.2/Tue Aug 24 22:08:11 2010//THEAD
 /merge.c/1.7/Tue Aug 24 22:08:11 2010//THEAD
-/rcs.1/1.54/Tue Aug 24 22:08:11 2010//THEAD
-/rcs.c/1.60/Tue Aug 24 22:08:11 2010//THEAD
-/rcsclean.1/1.21/Tue Aug 24 22:08:11 2010//THEAD
 /rcsclean.c/1.52/Tue Aug 24 22:08:11 2010//THEAD
-/rcsdiff.1/1.29/Tue Aug 24 22:08:11 2010//THEAD
-/rcsmerge.1/1.14/Tue Aug 24 22:08:11 2010//THEAD
 /rcsmerge.c/1.52/Tue Aug 24 22:08:11 2010//THEAD
-/rcsnum.c/1.12/Tue Aug 24 22:08:11 2010//THEAD
 /rcsprog.h/1.63/Tue Aug 24 22:08:11 2010//THEAD
 /rcstime.c/1.3/Tue Aug 24 22:08:11 2010//THEAD
 /rcsutil.h/1.14/Tue Aug 24 22:08:11 2010//THEAD
-/rlog.1/1.23/Tue Aug 24 22:08:11 2010//THEAD
 /rlog.c/1.64/Tue Aug 24 22:08:11 2010//THEAD
+/ci.1/1.36/Wed Sep  8 19:27:24 2010//THEAD
+/co.1/1.29/Wed Sep  8 19:27:24 2010//THEAD
+/rcs.1/1.55/Wed Sep  8 19:27:24 2010//THEAD
+/rcsclean.1/1.22/Wed Sep  8 19:27:25 2010//THEAD
+/rcsdiff.1/1.30/Wed Sep  8 19:27:26 2010//THEAD
+/rcsmerge.1/1.15/Wed Sep  8 19:27:26 2010//THEAD
+/rlog.1/1.24/Wed Sep  8 19:27:27 2010//THEAD
+/Makefile/1.40/Result of merge+Tue Nov 30 23:58:22 2010//THEAD
+/merge.1/1.3/Tue Nov 30 23:58:23 2010//THEAD
+/rcsparse.h/1.1/Fri Oct 15 08:44:12 2010//THEAD
+/co.c/1.116/Result of merge//THEAD
+/rcsutil.c/1.38/Result of merge+Tue Dec  7 01:24:50 2010//THEAD
+/buf.c/1.21/Result of merge//THEAD
+/buf.h/1.12/Result of merge//THEAD
+/ci.c/1.212/Result of merge//THEAD
+/diff.c/1.33/Result of merge//THEAD
+/diff3.c/1.32/Result of merge//THEAD
+/ident.1/1.11/Wed May 25 23:06:45 2011//THEAD
+/ident.c/1.29/Wed May 25 23:06:45 2011//THEAD
+/rcs.c/1.76/Wed May 25 23:06:45 2011//THEAD
+/rcs.h/1.14/Result of merge//THEAD
+/rcsdiff.c/1.78/Tue Dec  7 01:24:50 2010//THEAD
+/rcsnum.c/1.13/Wed May 25 23:06:45 2011//THEAD
+/rcsparse.c/1.6/Result of merge//THEAD
+/rcsprog.c/1.150/Tue Dec  7 01:24:50 2010//THEAD
 D

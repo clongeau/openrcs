@@ -27,6 +27,11 @@
 #define SIZE_T_MAX UINT_MAX
 #endif
 
+/* From /usr/include/pwd.h */
+#ifndef _PW_NAME_LEN
+#define _PW_NAME_LEN            31      /* max length, not counting NUL */
+#endif
+
 #ifndef HAVE_STRTONUM
 long long strtonum(const char *nptr, long long minval, long long maxval, const char **errstr);
 #endif

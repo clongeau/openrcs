@@ -1,4 +1,4 @@
-/*	$OpenBSD: ci.c,v 1.210 2010/07/30 21:47:18 ray Exp $	*/
+/*	$OpenBSD: ci.c,v 1.212 2011/04/20 19:34:16 nicm Exp $	*/
 /*
  * Copyright (c) 2005, 2006 Niall O'Higgins <niallo@openbsd.org>
  * All rights reserved.
@@ -52,12 +52,6 @@
 #define KW_TYPE_DATE		3
 #define KW_TYPE_STATE		4
 #define KW_TYPE_REVISION	5
-
-#define KW_NUMTOKS_ID		10
-#define KW_NUMTOKS_AUTHOR	3
-#define KW_NUMTOKS_DATE		4
-#define KW_NUMTOKS_STATE	3
-#define KW_NUMTOKS_REVISION	3
 
 /* Maximum number of tokens in a keyword. */
 #define KW_NUMTOKS_MAX		10
@@ -241,10 +235,6 @@ checkin_main(int argc, char **argv)
 
 	if ((pb.username = getlogin()) == NULL)
 		err(1, "getlogin");
-
-	/* If -x flag was not given, use default. */
-	if (rcs_suffixes == NULL)
-		rcs_suffixes = RCS_DEFAULT_SUFFIX;
 
 	for (i = 0; i < argc; i++) {
 		/*
