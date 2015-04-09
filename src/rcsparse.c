@@ -1,4 +1,4 @@
-/*	$OpenBSD: rcsparse.c,v 1.7 2011/07/14 16:38:39 sobrado Exp $	*/
+/*	$OpenBSD: rcsparse.c,v 1.14 2014/12/01 21:58:46 deraadt Exp $	*/
 /*
  * Copyright (c) 2010 Tobias Stoeckmann <tobias@openbsd.org>
  *
@@ -109,6 +109,7 @@ static const struct rcs_keyword keywords[] = {
 	{ "branch",		RCS_TOK_BRANCH},
 	{ "branches",		RCS_TOK_BRANCHES},
 	{ "comment",		RCS_TOK_COMMENT},
+	{ "commitid",		RCS_TOK_COMMITID},
 	{ "date",		RCS_TOK_DATE},
 	{ "desc",		RCS_TOK_DESC},
 	{ "expand",		RCS_TOK_EXPAND},
@@ -153,6 +154,7 @@ static int	rcsparse_string(RCSFILE *, int);
 static int	rcsparse_token(RCSFILE *, int);
 static void	rcsparse_warnx(RCSFILE *, char *, ...);
 static int	valid_login(char *);
+static int	valid_commitid(char *);
 
 /*
  * head [REVISION];
@@ -224,7 +226,7 @@ rcsparse_init(RCSFILE *rfp)
 	if (rfp->rf_flags & RCS_PARSED)
 		return (0);
 
-	pdp = xmalloc(sizeof(*pdp));
+	pdp = xcalloc(1, sizeof(*pdp));
 	pdp->rp_buf = xmalloc(RCS_BUFSIZE);
 	pdp->rp_blen = RCS_BUFSIZE;
 	pdp->rp_bufend = pdp->rp_buf + pdp->rp_blen - 1;
@@ -530,7 +532,7 @@ rcsparse_commitid(RCSFILE *rfp, struct rcs_pdata *pdp)
 	if (rcsparse_token(rfp, RCS_TYPE_COMMITID) != RCS_TYPE_COMMITID)
 		return (1);
 
-	/* XXX - do something with commitid */
+	pdp->rp_delta->rd_commitid = pdp->rp_value.str;
 
 	return (rcsparse_token(rfp, RCS_TOK_SCOLON) != RCS_TOK_SCOLON);
 }
@@ -916,7 +918,6 @@ rcsparse_token(RCSFILE *rfp, int allowed)
 	} while (isspace(c));
 
 	pdp->rp_msglineno = pdp->rp_lineno;
-	type = 0;
 	switch (c) {
 	case '@':
 		ret = rcsparse_string(rfp, allowed);
@@ -991,7 +992,12 @@ rcsparse_token(RCSFILE *rfp, int allowed)
 
 	switch (allowed) {
 	case RCS_TYPE_COMMITID:
-		/* XXX validate commitid */
+		if (!valid_commitid(pdp->rp_buf)) {
+			rcsparse_warnx(rfp, "invalid commitid \"%s\"",
+			    pdp->rp_buf);
+			return (0);
+		}
+		pdp->rp_value.str = xstrdup(pdp->rp_buf);
 		break;
 	case RCS_TYPE_LOGIN:
 		if (!valid_login(pdp->rp_buf)) {
@@ -1100,7 +1106,6 @@ rcsparse(RCSFILE *rfp, struct rcs_section *sec)
 	int i, token;
 
 	pdp = (struct rcs_pdata *)rfp->rf_pdata;
-	i = 0;
 
 	token = 0;
 	for (i = 0; sec[i].token != 0; i++) {
@@ -1148,7 +1153,7 @@ rcsparse_deltatext(RCSFILE *rfp)
 	if (!(rfp->rf_flags & PARSED_DESC))
 		if ((ret = rcsparse_desc(rfp)))
 			return (ret);
-		
+
 	if (rcsparse(rfp, sec_deltatext))
 		return (-1);
 
@@ -1197,7 +1202,7 @@ rcsparse_growbuf(RCSFILE *rfp)
 {
 	struct rcs_pdata *pdp = (struct rcs_pdata *)rfp->rf_pdata;
 	
-	pdp->rp_buf = xrealloc(pdp->rp_buf, 1,
+	pdp->rp_buf = xreallocarray(pdp->rp_buf, 1,
 		pdp->rp_blen + RCS_BUFEXTSIZE);
 	pdp->rp_blen += RCS_BUFEXTSIZE;
 	pdp->rp_bufend = pdp->rp_buf + pdp->rp_blen - 1;
@@ -1229,6 +1234,21 @@ valid_login(char *login_name)
 }
 
 static int
+valid_commitid(char *commitid)
+{
+	unsigned char *cp;
+
+	/* A-Za-z0-9 */
+	for (cp = commitid; *cp ; cp++) {
+		if (!isalnum(*cp))
+			return 0;
+	}
+	if ((char *)cp - commitid > RCS_COMMITID_MAXLEN)
+		return 0;
+	return 1;
+}
+
+static int
 kw_cmp(const void *k, const void *e)
 {
 	return (strcmp(k, ((const struct rcs_keyword *)e)->k_name));
@@ -1239,15 +1259,16 @@ rcsparse_warnx(RCSFILE *rfp, char *fmt, ...)
 {
 	struct rcs_pdata *pdp;
 	va_list ap;
-	char *nfmt;
+	char *msg;
 
 	pdp = (struct rcs_pdata *)rfp->rf_pdata;
 	va_start(ap, fmt);
-	if (asprintf(&nfmt, "%s:%d: %s", rfp->rf_path, pdp->rp_msglineno, fmt)
-	    == -1)
-		nfmt = fmt;
-	vwarnx(nfmt, ap);
+	if (vasprintf(&msg, fmt, ap) == -1) {
+		warn("vasprintf");
+		va_end(ap);
+		return;
+	}
 	va_end(ap);
-	if (nfmt != fmt)
-		free(nfmt);
+	warnx("%s:%d: %s", rfp->rf_path, pdp->rp_msglineno, msg);
+	free(msg);
 }

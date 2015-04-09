@@ -1,4 +1,4 @@
-/* $OpenBSD: xmalloc.c,v 1.4 2009/06/07 08:39:13 ray Exp $ */
+/* $OpenBSD: xmalloc.c,v 1.8 2015/03/26 15:17:30 okan Exp $ */
 /*
  * Author: Tatu Ylonen <ylo@cs.hut.fi>
  * Copyright (c) 1995 Tatu Ylonen <ylo@cs.hut.fi>, Espoo, Finland
@@ -17,8 +17,8 @@
 #define _GNU_SOURCE
 
 #include <err.h>
-#include <limits.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,8 +36,8 @@ xmalloc(size_t size)
 	ptr = malloc(size);
 	if (ptr == NULL)
 		errx(1,
-		    "xmalloc: out of memory (allocating %lu bytes)",
-		    (u_long) size);
+		    "xmalloc: out of memory (allocating %zu bytes)",
+		    size);
 	return ptr;
 }
 
@@ -52,28 +52,20 @@ xcalloc(size_t nmemb, size_t size)
 		errx(1, "xcalloc: nmemb * size > SIZE_MAX");
 	ptr = calloc(nmemb, size);
 	if (ptr == NULL)
-		errx(1, "xcalloc: out of memory (allocating %lu bytes)",
-		    (u_long)(size * nmemb));
+		errx(1, "xcalloc: out of memory (allocating %zu bytes)",
+		    (size * nmemb));
 	return ptr;
 }
 
 void *
-xrealloc(void *ptr, size_t nmemb, size_t size)
+xreallocarray(void *ptr, size_t nmemb, size_t size)
 {
 	void *new_ptr;
-	size_t new_size = nmemb * size;
 
-	if (new_size == 0)
-		errx(1, "xrealloc: zero size");
-	if (SIZE_MAX / nmemb < size)
-		errx(1, "xrealloc: nmemb * size > SIZE_MAX");
-	if (ptr == NULL)
-		new_ptr = malloc(new_size);
-	else
-		new_ptr = realloc(ptr, new_size);
+	new_ptr = reallocarray(ptr, nmemb, size);
 	if (new_ptr == NULL)
-		errx(1, "xrealloc: out of memory (new_size %lu bytes)",
-		    (u_long) new_size);
+		errx(1, "xreallocarray: out of memory (new_size %zu bytes)",
+		    nmemb * size);
 	return new_ptr;
 }
 

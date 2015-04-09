@@ -1,4 +1,4 @@
-/*	$OpenBSD: rcsnum.c,v 1.13 2011/05/20 19:21:10 nicm Exp $	*/
+/*	$OpenBSD: rcsnum.c,v 1.16 2015/01/16 06:40:11 deraadt Exp $	*/
 /*
  * Copyright (c) 2004 Jean-Francois Brousseau <jfb@openbsd.org>
  * All rights reserved.
@@ -24,14 +24,15 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/param.h>
-
 #include <ctype.h>
 #include <err.h>
 #include <string.h>
+#include <limits.h>
 
 #include "rcs.h"
 #include "xmalloc.h"
+
+#define MINIMUM(a, b)	(((a) < (b)) ? (a) : (b))
 
 static void	 rcsnum_setsize(RCSNUM *, u_int);
 static char	*rcsnum_itoa(u_int16_t, char *, size_t);
@@ -199,7 +200,7 @@ rcsnum_cmp(const RCSNUM *n1, const RCSNUM *n2, u_int depth)
 	u_int i;
 	size_t slen;
 
-	slen = MIN(n1->rn_len, n2->rn_len);
+	slen = MINIMUM(n1->rn_len, n2->rn_len);
 	if (depth != 0 && slen > depth)
 		slen = depth;
 
@@ -247,7 +248,7 @@ rcsnum_aton(const char *str, char **ep, RCSNUM *nump)
 	nump->rn_id[0] = 0;
 
 	for (sp = str;; sp++) {
-		if (!isdigit(*sp) && (*sp != '.'))
+		if (!isdigit((unsigned char)*sp) && (*sp != '.'))
 			break;
 
 		if (*sp == '.') {
@@ -257,7 +258,7 @@ rcsnum_aton(const char *str, char **ep, RCSNUM *nump)
 			}
 
 			nump->rn_len++;
-			nump->rn_id = xrealloc(nump->rn_id,
+			nump->rn_id = xreallocarray(nump->rn_id,
 			    nump->rn_len + 1, sizeof(*(nump->rn_id)));
 			nump->rn_id[nump->rn_len] = 0;
 			continue;
@@ -320,7 +321,7 @@ rcsnum_aton(const char *str, char **ep, RCSNUM *nump)
 	/* We can't have a single-digit rcs number. */
 	if (nump->rn_len == 0) {
 		nump->rn_len++;
-		nump->rn_id = xrealloc(nump->rn_id,
+		nump->rn_id = xreallocarray(nump->rn_id,
 		    nump->rn_len + 1, sizeof(*(nump->rn_id)));
 		nump->rn_id[nump->rn_len] = 0;
 	}
@@ -400,6 +401,6 @@ rcsnum_brtorev(const RCSNUM *brnum)
 static void
 rcsnum_setsize(RCSNUM *num, u_int len)
 {
-	num->rn_id = xrealloc(num->rn_id, len, sizeof(*(num->rn_id)));
+	num->rn_id = xreallocarray(num->rn_id, len, sizeof(*(num->rn_id)));
 	num->rn_len = len;
 }

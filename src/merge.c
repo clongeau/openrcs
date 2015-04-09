@@ -1,4 +1,4 @@
-/*	$OpenBSD: merge.c,v 1.7 2010/07/23 21:46:05 ray Exp $	*/
+/*	$OpenBSD: merge.c,v 1.9 2014/10/10 08:15:25 otto Exp $	*/
 /*
  * Copyright (c) 2006 Xavier Santolaria <xsa@openbsd.org>
  * All rights reserved.
@@ -40,7 +40,6 @@ merge_main(int argc, char **argv)
 	BUF *bp;
 
 	flags = labels = 0;
-	status = D_ERROR;
 
 	/*
 	 * Using getopt(3) and not rcs_getopt() because merge(1)
@@ -77,7 +76,6 @@ merge_main(int argc, char **argv)
 			exit(0);
 		default:
 			(usage)();
-			exit(D_ERROR);
 		}
 	}
 	argc -= optind;
@@ -86,7 +84,6 @@ merge_main(int argc, char **argv)
 	if (argc != 3) {
 		warnx("%s arguments", (argc < 3) ? "not enough" : "too many");
 		(usage)();
-		exit(D_ERROR);
 	}
 
 	for (; labels < 3; labels++)
@@ -113,9 +110,11 @@ merge_main(int argc, char **argv)
 	return (status);
 }
 
-void
+__dead void
 merge_usage(void)
 {
 	(void)fprintf(stderr,
 	    "usage: merge [-EepqV] [-L label] file1 file2 file3\n");
+
+	exit(D_ERROR);
 }

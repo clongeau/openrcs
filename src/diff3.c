@@ -1,4 +1,4 @@
-/*	$OpenBSD: diff3.c,v 1.32 2011/04/20 19:34:16 nicm Exp $	*/
+/*	$OpenBSD: diff3.c,v 1.35 2015/01/16 06:40:11 deraadt Exp $	*/
 
 /*
  * Copyright (C) Caldera International Inc.  2001-2002.
@@ -126,12 +126,12 @@ static int last[4];
 static int eflag = 3;	/* default -E for compatibility with former RCS */
 static int oflag = 1;	/* default -E for compatibility with former RCS */
 static int debug  = 0;
-static char f1mark[MAXPATHLEN], f3mark[MAXPATHLEN];	/* markers for -E and -X */
+static char f1mark[PATH_MAX], f3mark[PATH_MAX];	/* markers for -E and -X */
 
 static int duplicate(struct range *, struct range *);
 static int edit(struct diff *, int, int);
 static char *getchange(FILE *);
-static char *diff3_getline(FILE *, size_t *);
+static char *get_line(FILE *, size_t *);
 static int number(char **);
 static ssize_t readin(char *, struct diff **);
 static int skip(int, int, char *);
@@ -612,7 +612,7 @@ getchange(FILE *b)
 {
 	char *line;
 
-	while ((line = diff3_getline(b, NULL))) {
+	while ((line = get_line(b, NULL))) {
 		if (isdigit((unsigned char)line[0]))
 			return (line);
 	}
@@ -621,7 +621,7 @@ getchange(FILE *b)
 }
 
 static char *
-diff3_getline(FILE *b, size_t *n)
+get_line(FILE *b, size_t *n)
 {
 	char *cp;
 	size_t len;
@@ -637,7 +637,7 @@ diff3_getline(FILE *b, size_t *n)
 		do {
 			bufsize += 1024;
 		} while (len + 1 > bufsize);
-		buf = xrealloc(buf, 1, bufsize);
+		buf = xreallocarray(buf, 1, bufsize);
 	}
 	memcpy(buf, cp, len - 1);
 	buf[len - 1] = '\n';
@@ -823,7 +823,7 @@ skip(int i, int from, char *pr)
 	char *line;
 
 	for (n = 0; cline[i] < from - 1; n += j) {
-		if ((line = diff3_getline(fp[i], &j)) == NULL)
+		if ((line = get_line(fp[i], &j)) == NULL)
 			return (-1);
 		if (pr != NULL)
 			diff_output("%s%s", pr, line);
@@ -934,13 +934,13 @@ increase(void)
 	newsz = szchanges == 0 ? 64 : 2 * szchanges;
 	incr = newsz - szchanges;
 
-	d13 = xrealloc(d13, newsz, sizeof(*d13));
+	d13 = xreallocarray(d13, newsz, sizeof(*d13));
 	memset(d13 + szchanges, 0, incr * sizeof(*d13));
-	d23 = xrealloc(d23, newsz, sizeof(*d23));
+	d23 = xreallocarray(d23, newsz, sizeof(*d23));
 	memset(d23 + szchanges, 0, incr * sizeof(*d23));
-	de = xrealloc(de, newsz, sizeof(*de));
+	de = xreallocarray(de, newsz, sizeof(*de));
 	memset(de + szchanges, 0, incr * sizeof(*de));
-	overlap = xrealloc(overlap, newsz, sizeof(*overlap));
+	overlap = xreallocarray(overlap, newsz, sizeof(*overlap));
 	memset(overlap + szchanges, 0, incr * sizeof(*overlap));
 	szchanges = newsz;
 }

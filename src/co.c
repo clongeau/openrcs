@@ -1,4 +1,4 @@
-/*	$OpenBSD: co.c,v 1.116 2010/12/03 19:44:58 chl Exp $	*/
+/*	$OpenBSD: co.c,v 1.120 2015/01/16 06:40:11 deraadt Exp $	*/
 /*
  * Copyright (c) 2005 Joris Vink <joris@openbsd.org>
  * All rights reserved.
@@ -50,13 +50,12 @@ checkout_main(int argc, char **argv)
 	RCSNUM *rev;
 	RCSFILE *file;
 	const char *author, *date, *state;
-	char fpath[MAXPATHLEN];
+	char fpath[PATH_MAX];
 	char *rev_str, *username;
 	time_t rcs_mtime = -1;
 
 	flags = ret = 0;
 	kflag = RCS_KWEXP_ERR;
-	rev = RCS_HEAD_REV;
 	rev_str = NULL;
 	author = date = state = NULL;
 
@@ -79,7 +78,6 @@ checkout_main(int argc, char **argv)
 			if (RCS_KWEXP_INVAL(kflag)) {
 				warnx("invalid RCS keyword substitution mode");
 				(usage)();
-				exit(1);
 			}
 			break;
 		case 'l':
@@ -141,7 +139,6 @@ checkout_main(int argc, char **argv)
 			break;
 		default:
 			(usage)();
-			exit(1);
 		}
 	}
 
@@ -151,7 +148,6 @@ checkout_main(int argc, char **argv)
 	if (argc == 0) {
 		warnx("no input file");
 		(usage)();
-		exit (1);
 	}
 
 	if ((username = getlogin()) == NULL)
@@ -222,13 +218,15 @@ checkout_main(int argc, char **argv)
 	return (ret);
 }
 
-void
+__dead void
 checkout_usage(void)
 {
 	fprintf(stderr,
 	    "usage: co [-TV] [-ddate] [-f[rev]] [-I[rev]] [-kmode] [-l[rev]]\n"
 	    "          [-M[rev]] [-p[rev]] [-q[rev]] [-r[rev]] [-sstate]\n"
 	    "          [-u[rev]] [-w[user]] [-xsuffixes] [-ztz] file ...\n");
+	
+	exit(1);
 }
 
 /*
@@ -257,7 +255,7 @@ checkout_rev(RCSFILE *file, RCSNUM *frev, const char *dst, int flags,
 	time_t rcsdate, givendate;
 	RCSNUM *rev;
 
-	rcsdate = givendate = -1;
+	givendate = -1;
 	if (date != NULL && (givendate = date_parse(date)) == -1) {
 		warnx("invalid date: %s", date);
 		return -1;
@@ -485,7 +483,7 @@ checkout_rev(RCSFILE *file, RCSNUM *frev, const char *dst, int flags,
 		if (flags & CO_REVDATE) {
 			struct timeval tv[2];
 			memset(&tv, 0, sizeof(tv));
-			tv[0].tv_sec = (long)rcs_rev_getdate(file, rev);
+			tv[0].tv_sec = rcs_rev_getdate(file, rev);
 			tv[1].tv_sec = tv[0].tv_sec;
 #if defined(HAVE_FUTIME) || defined(HAVE_FUTIMES)
 			if (futimes(fd, (const struct timeval *)&tv) < 0)

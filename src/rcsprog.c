@@ -1,4 +1,4 @@
-/*	$OpenBSD: rcsprog.c,v 1.151 2011/07/12 21:00:32 sobrado Exp $	*/
+/*	$OpenBSD: rcsprog.c,v 1.155 2015/01/16 06:40:11 deraadt Exp $	*/
 /*
  * Copyright (c) 2005 Jean-Francois Brousseau <jfb@openbsd.org>
  * All rights reserved.
@@ -100,7 +100,7 @@ build_cmd(char ***cmd_argv, char **argv, int argc)
 
 		if (cmd_argc == cur) {
 			cur += 8;
-			*cmd_argv = xrealloc(*cmd_argv, cur,
+			*cmd_argv = xreallocarray(*cmd_argv, cur,
 			    sizeof(char *));
 		}
 
@@ -109,7 +109,7 @@ build_cmd(char ***cmd_argv, char **argv, int argc)
 
 	if (cmd_argc + argc > cur) {
 		cur = cmd_argc + argc + 1;
-		*cmd_argv = xrealloc(*cmd_argv, cur,
+		*cmd_argv = xreallocarray(*cmd_argv, cur,
 		    sizeof(char *));
 	}
 
@@ -158,13 +158,15 @@ main(int argc, char **argv)
 }
 
 
-void
+__dead void
 rcs_usage(void)
 {
 	fprintf(stderr,
 	    "usage: rcs [-IiLqTUV] [-Aoldfile] [-ausers] [-b[rev]]\n"
 	    "           [-cstring] [-e[users]] [-kmode] [-l[rev]] [-mrev:msg]\n"
 	    "           [-orev] [-t[str]] [-u[rev]] [-xsuffixes] file ...\n");
+
+	exit(1);
 }
 
 /*
@@ -179,7 +181,7 @@ rcs_main(int argc, char **argv)
 	int fd;
 	int i, j, ch, flags, kflag, lkmode;
 	const char *nflag, *oldfilename, *orange;
-	char fpath[MAXPATHLEN];
+	char fpath[PATH_MAX];
 	char *logstr, *logmsg, *descfile;
 	char *alist, *comment, *elist, *lrev, *urev;
 	mode_t fmode;
@@ -225,7 +227,6 @@ rcs_main(int argc, char **argv)
 			if (RCS_KWEXP_INVAL(kflag)) {
 				warnx("invalid RCS keyword substitution mode");
 				(usage)();
-				exit(1);
 			}
 			break;
 		case 'L':
@@ -234,8 +235,10 @@ rcs_main(int argc, char **argv)
 			lkmode = RCS_LOCK_STRICT;
 			break;
 		case 'l':
-			/* XXX - Check with -u flag. */
+			if (rcsflags & RCSPROG_UFLAG)
+				warnx("-u overridden by -l");
 			lrev = rcs_optarg;
+			rcsflags &= ~RCSPROG_UFLAG;
 			rcsflags |= RCSPROG_LFLAG;
 			break;
 		case 'm':
@@ -272,8 +275,10 @@ rcs_main(int argc, char **argv)
 			lkmode = RCS_LOCK_LOOSE;
 			break;
 		case 'u':
-			/* XXX - Check with -l flag. */
+			if (rcsflags & RCSPROG_LFLAG)
+				warnx("-l overridden by -u");
 			urev = rcs_optarg;
+			rcsflags &= ~RCSPROG_LFLAG;
 			rcsflags |= RCSPROG_UFLAG;
 			break;
 		case 'V':
@@ -290,7 +295,6 @@ rcs_main(int argc, char **argv)
 			break;
 		default:
 			(usage)();
-			exit(1);
 		}
 	}
 
@@ -300,7 +304,6 @@ rcs_main(int argc, char **argv)
 	if (argc == 0) {
 		warnx("no input file");
 		(usage)();
-		exit(1);
 	}
 
 	for (i = 0; i < argc; i++) {
@@ -368,7 +371,7 @@ rcs_main(int argc, char **argv)
 		if (rcsflags & CO_ACLAPPEND) {
 			RCSFILE *oldfile;
 			int ofd;
-			char ofpath[MAXPATHLEN];
+			char ofpath[PATH_MAX];
 
 			ofd = rcs_choosefile(oldfilename, ofpath, sizeof(ofpath));
 			if (ofd < 0) {

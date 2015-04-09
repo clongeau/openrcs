@@ -52,7 +52,7 @@ fgetln(stream, len)
 	return NULL;
     *len = strlen(buffer);
     while (*len == buflen && buffer[*len-1] != '\n') {
-	buffer = xrealloc(buffer, 1, 2*buflen + 1);
+	buffer = reallocarray(buffer, 1, 2*buflen + 1);
 	if (fgets(buffer + buflen, buflen + 1, stream) == NULL)
 	    return NULL;
 	*len += strlen(buffer + buflen);

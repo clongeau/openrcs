@@ -1,4 +1,4 @@
-/*	$OpenBSD: rcsutil.c,v 1.38 2010/12/06 22:52:55 chl Exp $	*/
+/*	$OpenBSD: rcsutil.c,v 1.43 2015/01/16 06:40:11 deraadt Exp $	*/
 /*
  * Copyright (c) 2005, 2006 Joris Vink <joris@openbsd.org>
  * Copyright (c) 2006 Xavier Santolaria <xsa@openbsd.org>
@@ -59,8 +59,8 @@ rcs_get_mtime(RCSFILE *file)
 		return (-1);
 	}
 
-/*	mtime = (time_t)st.st_mtimespec.tv_sec; */
-	mtime = (time_t)st.st_mtime;
+	/* mtime = st.st_mtimespec.tv_sec; */
+	mtime = st.st_mtime;
 
 	return (mtime);
 }
@@ -159,10 +159,8 @@ rcs_choosefile(const char *filename, char *out, size_t len)
 {
 	int fd;
 	struct stat sb;
-	char *p, *ext, name[MAXPATHLEN], *next, *ptr, rcsdir[MAXPATHLEN],
-	    *suffixes, rcspath[MAXPATHLEN];
-
-	fd = -1;
+	char *p, *ext, name[PATH_MAX], *next, *ptr, rcsdir[PATH_MAX],
+	    *suffixes, rcspath[PATH_MAX];
 
 	/*
 	 * If `filename' contains a directory, `rcspath' contains that
@@ -222,7 +220,7 @@ rcs_choosefile(const char *filename, char *out, size_t len)
 	 */
 	suffixes = xstrdup(rcs_suffixes);
 	for (next = suffixes; (ext = strsep(&next, "/")) != NULL;) {
-		char fpath[MAXPATHLEN];
+		char fpath[PATH_MAX];
 
 		if ((p = strrchr(rcspath, ',')) != NULL) {
 			if (!strcmp(p, ext)) {
@@ -484,12 +482,10 @@ rcs_splitlines(u_char *data, size_t len)
 	struct rcs_line *lp;
 	size_t i, tlen;
 
-	lines = xmalloc(sizeof(*lines));
-	memset(lines, 0, sizeof(*lines));
+	lines = xcalloc(1, sizeof(*lines));
 	TAILQ_INIT(&(lines->l_lines));
 
-	lp = xmalloc(sizeof(*lp));
-	memset(lp, 0, sizeof(*lp));
+	lp = xcalloc(1, sizeof(*lp));
 	TAILQ_INSERT_TAIL(&(lines->l_lines), lp, l_list);
 
 
@@ -601,7 +597,7 @@ rcs_strsplit(const char *str, const char *sep)
 
 	while ((p = strsep(&cp, sep)) != NULL) {
 		av->argv[i++] = p;
-		av->argv = xrealloc(av->argv,
+		av->argv = xreallocarray(av->argv,
 		    i + 1, sizeof(*(av->argv)));
 	}
 	av->argv[i] = NULL;

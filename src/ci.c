@@ -1,4 +1,4 @@
-/*	$OpenBSD: ci.c,v 1.213 2011/07/14 16:31:34 sobrado Exp $	*/
+/*	$OpenBSD: ci.c,v 1.219 2015/01/16 06:40:11 deraadt Exp $	*/
 /*
  * Copyright (c) 2005, 2006 Niall O'Higgins <niallo@openbsd.org>
  * All rights reserved.
@@ -42,6 +42,7 @@
 #define DATE_MTIME	-2
 
 #define KW_ID		"Id"
+#define KW_OPENBSD	"OpenBSD"
 #define KW_AUTHOR	"Author"
 #define KW_DATE		"Date"
 #define KW_STATE	"State"
@@ -69,7 +70,7 @@ struct checkin_params {
 	RCSFILE *file;
 	RCSNUM *frev, *newrev;
 	const char *description, *symbol;
-	char fpath[MAXPATHLEN], *rcs_msg, *username, *filename;
+	char fpath[PATH_MAX], *rcs_msg, *username, *filename;
 	char *author, *state;
 	BUF *deltatext;
 };
@@ -88,7 +89,7 @@ static void	 checkin_parsekeyword(char *, RCSNUM **, time_t *, char **,
 static int	 checkin_update(struct checkin_params *);
 static int	 checkin_revert(struct checkin_params *);
 
-void
+__dead void
 checkin_usage(void)
 {
 	fprintf(stderr,
@@ -96,6 +97,8 @@ checkin_usage(void)
 	    "          [-j[rev]] [-k[rev]] [-l[rev]] [-M[rev]] [-mmsg]\n"
 	    "          [-Nsymbol] [-nsymbol] [-r[rev]] [-sstate] [-t[str]]\n"
 	    "          [-u[rev]] [-wusername] [-xsuffixes] [-ztz] file ...\n");
+
+	exit(1);
 }
 
 /*
@@ -220,7 +223,6 @@ checkin_main(int argc, char **argv)
 			break;
 		default:
 			(usage)();
-			exit(1);
 		}
 	}
 
@@ -230,7 +232,6 @@ checkin_main(int argc, char **argv)
 	if (argc == 0) {
 		warnx("no input file");
 		(usage)();
-		exit(1);
 	}
 
 	if ((pb.username = getlogin()) == NULL)
@@ -286,7 +287,6 @@ checkin_main(int argc, char **argv)
 			(void)fprintf(stderr,
 			    "%s  <--  %s\n", pb.fpath, pb.filename);
 
-		/* XXX - Should we rcsnum_free(pb.newrev)? */
 		if (rev_str != NULL)
 			if ((pb.newrev = rcs_getrevnum(rev_str, pb.file)) ==
 			    NULL)
@@ -314,6 +314,8 @@ checkin_main(int argc, char **argv)
 		}
 
 		rcs_close(pb.file);
+		if (rev_str != NULL)
+			rcsnum_free(pb.newrev);
 		pb.newrev = NULL;
 	}
 
@@ -471,10 +473,9 @@ checkin_update(struct checkin_params *pb)
 	if (pb->date != DATE_NOW) {
 		time_t head_date = rcs_rev_getdate(pb->file, pb->frev);
 		if (pb->date <= head_date) {
-			char dbuf1[256], dbuf2[256], *fmt;
+			static const char fmt[] = "%Y/%m/%d %H:%M:%S";
+			char dbuf1[256], dbuf2[256];
 			struct tm *t, *t_head;
-
-			fmt = "%Y/%m/%d %H:%M:%S";
 
 			t = gmtime(&pb->date);
 			strftime(dbuf1, sizeof(dbuf1), fmt, t);
@@ -828,8 +829,8 @@ checkin_mtimedate(struct checkin_params *pb)
 	if (fstat(workfile_fd, &sb) == -1)
 		err(1, "%s", pb->filename);
 
-/*	pb->date = (time_t)sb.st_mtimespec.tv_sec; */
-	pb->date = (time_t)sb.st_mtime;
+	/* pb->date = sb.st_mtimespec.tv_sec; */
+	pb->date = sb.st_mtime;
 }
 
 /*
@@ -935,7 +936,8 @@ checkin_keywordtype(char *keystring)
 
 	p = keystring;
 	p++;
-	if (strncmp(p, KW_ID, strlen(KW_ID)) == 0)
+	if (strncmp(p, KW_ID, strlen(KW_ID)) == 0 ||
+	    strncmp(p, KW_OPENBSD, strlen(KW_OPENBSD)) == 0)
 		return (KW_TYPE_ID);
 	else if (strncmp(p, KW_AUTHOR, strlen(KW_AUTHOR)) == 0)
 		return (KW_TYPE_AUTHOR);

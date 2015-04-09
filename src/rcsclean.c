@@ -1,4 +1,4 @@
-/*	$OpenBSD: rcsclean.c,v 1.52 2010/07/28 09:07:11 ray Exp $	*/
+/*	$OpenBSD: rcsclean.c,v 1.54 2015/01/16 06:40:11 deraadt Exp $	*/
 /*
  * Copyright (c) 2005 Joris Vink <joris@openbsd.org>
  * All rights reserved.
@@ -60,7 +60,6 @@ rcsclean_main(int argc, char **argv)
 			if (RCS_KWEXP_INVAL(kflag)) {
 				warnx("invalid RCS keyword substitution mode");
 				(usage)();
-				exit(1);
 			}
 			break;
 		case 'n':
@@ -90,7 +89,6 @@ rcsclean_main(int argc, char **argv)
 			break;
 		default:
 			(usage)();
-			exit(1);
 		}
 	}
 
@@ -104,7 +102,6 @@ rcsclean_main(int argc, char **argv)
 		if ((dirp = opendir(".")) == NULL) {
 			warn("opendir");
 			(usage)();
-			exit(1);
 		}
 
 		while ((dp = readdir(dirp)) != NULL) {
@@ -121,12 +118,14 @@ rcsclean_main(int argc, char **argv)
 	return (0);
 }
 
-void
+__dead void
 rcsclean_usage(void)
 {
 	fprintf(stderr,
 	    "usage: rcsclean [-TV] [-kmode] [-n[rev]] [-q[rev]] [-r[rev]]\n"
 	    "                [-u[rev]] [-xsuffixes] [-ztz] [file ...]\n");
+
+	exit(1);
 }
 
 static void
@@ -134,7 +133,7 @@ rcsclean_file(char *fname, const char *rev_str)
 {
 	int fd, match;
 	RCSFILE *file;
-	char fpath[MAXPATHLEN], numb[RCS_REV_BUFSZ];
+	char fpath[PATH_MAX], numb[RCS_REV_BUFSZ];
 	RCSNUM *rev;
 	BUF *b1, *b2;
 	time_t rcs_mtime = -1;

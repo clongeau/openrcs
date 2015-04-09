@@ -1,4 +1,4 @@
-/*	$OpenBSD: rlog.c,v 1.65 2011/07/14 16:38:39 sobrado Exp $	*/
+/*	$OpenBSD: rlog.c,v 1.71 2015/01/16 06:40:11 deraadt Exp $	*/
 /*
  * Copyright (c) 2005, 2009 Joris Vink <joris@openbsd.org>
  * Copyright (c) 2005, 2006 Xavier Santolaria <xsa@openbsd.org>
@@ -58,13 +58,15 @@ static char *wlist = NULL;
 static char *revisions = NULL;
 static char *rlog_dates = NULL;
 
-void
+__dead void
 rlog_usage(void)
 {
 	fprintf(stderr,
 	    "usage: rlog [-bhLNRtV] [-ddates] [-l[lockers]] [-r[revs]]\n"
 	    "            [-sstates] [-w[logins]] [-xsuffixes]\n"
 	    "            [-ztz] file ...\n");
+
+	exit(1);
 }
 
 int
@@ -73,7 +75,7 @@ rlog_main(int argc, char **argv)
 	RCSFILE *file;
 	int Rflag;
 	int i, ch, fd, status;
-	char fpath[MAXPATHLEN];
+	char fpath[PATH_MAX];
 
 	rcsnum_flags |= RCSNUM_NO_MAGIC;
 	hflag = Rflag = rflag = status = 0;
@@ -134,8 +136,7 @@ rlog_main(int argc, char **argv)
 			timezone_flag = rcs_optarg;
 			break;
 		default:
-			(usage());
-			exit(1);
+			(usage)();
 		}
 	}
 
@@ -145,7 +146,6 @@ rlog_main(int argc, char **argv)
 	if (argc == 0) {
 		warnx("no input file");
 		(usage)();
-		exit(1);
 	}
 
 	if (hflag == 1 && tflag == 1) {
@@ -232,7 +232,7 @@ rlog_select_daterev(RCSFILE *rcsfile, char *date)
 			delim = '\0';
 			last = "\0";
 		} else {
-			while (*last && isspace(*last))
+			while (*last && isspace((unsigned char)*last))
 				last++;
 		}
 
@@ -433,7 +433,7 @@ rlog_rev_print(struct rcs_delta *rdp)
 	struct rcs_branch *rb;
 	struct rcs_delta *nrdp;
 
-	i = found = 0;
+	found = 0;
 	author = NULL;
 
 	/* -l[lockers] */
@@ -541,10 +541,14 @@ rlog_rev_print(struct rcs_delta *rdp)
 
 		rcs_delta_stats(nrdp, &added, &removed);
 		if (RCSNUM_ISBRANCHREV(rdp->rd_num))
-			printf("  lines: +%d -%d", added, removed);
+			printf("  lines: +%d -%d;", added, removed);
 		else
-			printf("  lines: +%d -%d", removed, added);
+			printf("  lines: +%d -%d;", removed, added);
 	}
+
+	if (rdp->rd_commitid != NULL)
+		printf("  commitid: %s;", rdp->rd_commitid);
+
 	printf("\n");
 
 	if (!TAILQ_EMPTY(&(rdp->rd_branches))) {

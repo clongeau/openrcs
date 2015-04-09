@@ -1,4 +1,4 @@
-/*	$OpenBSD: rcs.c,v 1.78 2011/07/14 16:38:39 sobrado Exp $	*/
+/*	$OpenBSD: rcs.c,v 1.82 2015/01/16 06:40:11 deraadt Exp $	*/
 /*
  * Copyright (c) 2004 Jean-Francois Brousseau <jfb@openbsd.org>
  * All rights reserved.
@@ -24,6 +24,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/param.h>	/* MAXBSIZE */
 #include <sys/stat.h>
 
 #include <ctype.h>
@@ -43,6 +44,8 @@
 #include "rcsprog.h"
 #include "rcsutil.h"
 #include "xmalloc.h"
+
+#define MINIMUM(a, b)	(((a) < (b)) ? (a) : (b))
 
 /* invalid characters in RCS states */
 static const char rcs_state_invch[] = RCS_STATE_INVALCHAR;
@@ -214,7 +217,6 @@ rcs_write(RCSFILE *rfp)
 	int fd;
 
 	fn = NULL;
-	fd = -1;
 
 	if (rfp->rf_flags & RCS_SYNCED)
 		return;
@@ -363,9 +365,6 @@ rcs_movefile(char *from, char *to, mode_t perm, u_int to_flags)
 	FILE *src, *dst;
 	size_t nread, nwritten;
 	char *buf;
-	int ret;
-
-	ret = -1;
 
 	if (rename(from, to) == 0) {
 		if (chmod(to, perm) == -1) {
@@ -416,8 +415,6 @@ rcs_movefile(char *from, char *to, mode_t perm, u_int to_flags)
 		}
 	}
 
-	ret = 0;
-
 	(void)unlink(from);
 
 out:
@@ -425,7 +422,7 @@ out:
 	(void)fclose(dst);
 	xfree(buf);
 
-	return (ret);
+	return (0);
 }
 
 /*
@@ -638,7 +635,7 @@ int
 rcs_sym_check(const char *sym)
 {
 	int ret;
-	const char *cp;
+	const unsigned char *cp;
 
 	ret = 1;
 	cp = sym;
@@ -987,7 +984,7 @@ rcs_getrev(RCSFILE *rfp, RCSNUM *frev)
 				/* XXX rcsnum_cmp() is totally broken for
 				 * this purpose.
 				 */
-				numlen = MIN(brev->rn_len,
+				numlen = MINIMUM(brev->rn_len,
 				    rb->rb_num->rn_len - 1);
 				for (i = 0; i < numlen; i++) {
 					if (rb->rb_num->rn_id[i] !=
@@ -1483,7 +1480,7 @@ rcs_expand_keywords(char *rcsfile_in, struct rcs_delta *rdp, BUF *bp, int mode)
 {
 	BUF *newbuf;
 	u_char *c, *kw, *fin;
-	char buf[256], *tmpf, resolved[MAXPATHLEN], *rcsfile;
+	char buf[256], *tmpf, resolved[PATH_MAX], *rcsfile;
 	u_char *line, *line2;
 	u_int i, j;
 	int kwtype;
@@ -1800,7 +1797,7 @@ int
 rcs_state_check(const char *state)
 {
 	int ret;
-	const char *cp;
+	const unsigned char *cp;
 
 	ret = 0;
 	cp = state;
